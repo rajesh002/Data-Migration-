@@ -6,8 +6,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.*;
@@ -37,7 +35,7 @@ public class Main {
 	            connection = DriverManager.getConnection(jdbcURL, username, password);
 	            connection.setAutoCommit(false);
 	  
-	            String sql = "INSERT INTO students (name, enrolled, progress) VALUES (?, ?, ?)";
+	            String sql = "INSERT INTO students (name, marks, progress) VALUES (?, ?, ?)";
 	            PreparedStatement statement = connection.prepareStatement(sql);    
 	             
 	            int count = 0;
@@ -59,8 +57,8 @@ public class Main {
 	                        statement.setString(1, name);
 	                        break;
 	                    case 1:
-	                        Date enrollDate = nextCell.getDateCellValue();
-	                        statement.setTimestamp(2, new Timestamp(enrollDate.getTime()));
+	                    	int marks = (int) nextCell.getNumericCellValue();
+	                        statement.setInt(2, marks);
 	                    case 2:
 	                        int progress = (int) nextCell.getNumericCellValue();
 	                        statement.setInt(3, progress);
