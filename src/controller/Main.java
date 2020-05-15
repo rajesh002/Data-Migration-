@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.*;
@@ -15,83 +16,119 @@ public class Main {
 	        String jdbcURL = "jdbc:oracle:thin:@localhost:1521:orcl";
 	        String username = "system";
 	        String password = "Rajesh123";
-	 
 	        String excelFilePath = "Students.xlsx";
-	 
-	        int batchSize = 20;
 	 
 	        Connection connection = null;
 	 
-	        try {
-	            long start = System.currentTimeMillis();
-	             
+	        try { 
 	            FileInputStream inputStream = new FileInputStream(excelFilePath);
 	 
 	            Workbook workbook = new XSSFWorkbook(inputStream);
 	 
 	            Sheet firstSheet = workbook.getSheetAt(0);
 	            Iterator<Row> rowIterator = firstSheet.iterator();
+	            Iterator<Row> rowIterator1 = firstSheet.iterator();
 	 
 	            connection = DriverManager.getConnection(jdbcURL, username, password);
 	            connection.setAutoCommit(false);
 	  
-	            String sql = "INSERT INTO students (name, marks, progress) VALUES (?, ?, ?)";
-	            PreparedStatement statement = connection.prepareStatement(sql);    
+	                
+	            String create = "CREATE TABLE student(";
+	            StringBuilder createstmt = new StringBuilder(create);
+	            int count=0;
+	            
+	            String insert = "INSERT INTO student VALUES (";
+	            
+	            
+	            
+	            
+	           if(rowIterator.hasNext()){
+	        	   Row secondRow = firstSheet.getRow(1);
+	        	   Row firsttRow = rowIterator.next();
+	        	   
+	        	   Iterator<Cell> headIterator = firsttRow.cellIterator();
+	               Iterator<Cell> cellIterator = secondRow.cellIterator();
+	               
+	                while (cellIterator.hasNext()) {
+	                	count+=1;
+	                    Cell nextCell = cellIterator.next();
+	                    Cell headNextCell = headIterator.next();
+	                    CellType type = nextCell.getCellType();
+	                    if (type == CellType.STRING) 
+	                    	createstmt.append(headNextCell+" varchar(30),");
+	                    else if(type == CellType.NUMERIC)
+	                    	createstmt.append(headNextCell+" number,");
+	                    }
+	                
+	                createstmt.setCharAt(createstmt.length()-1,')');      
+	                }
+	           
+	           
+	           try {
+	           Statement stmt = connection.createStatement();
+	           String temp=createstmt.toString();
+	           stmt.executeUpdate(temp);
+				} catch (SQLException e) {
+					
+				}
 	             
-	            int count = 0;
-	             
-	            rowIterator.next(); 
-	             
-	            while (rowIterator.hasNext()) {
-	                Row nextRow = rowIterator.next();
+	          
+	           
+	           for(int i=1;i<=count;i++) {
+	        	   if(i!=count)
+	        		   insert+="?,";
+	        	   else
+	        		   insert+="?";
+	           }
+	           insert+=")";
+	           
+	            
+	           PreparedStatement statement = connection.prepareStatement(insert);
+	           
+	           
+	           rowIterator1.next();
+	           int index;
+	            while (rowIterator1.hasNext()) {
+	            	index=1;
+	                Row nextRow = rowIterator1.next();
 	                Iterator<Cell> cellIterator = nextRow.cellIterator();
 	 
 	                while (cellIterator.hasNext()) {
 	                    Cell nextCell = cellIterator.next();
-	 
-	                    int columnIndex = nextCell.getColumnIndex();
-	 
-	                    switch (columnIndex) {
-	                    case 0:
+	                    CellType type = nextCell.getCellType();
+	                    if (type == CellType.STRING) {
 	                        String name = nextCell.getStringCellValue();
-	                        statement.setString(1, name);
-	                        break;
-	                    case 1:
-	                    	int marks = (int) nextCell.getNumericCellValue();
-	                        statement.setInt(2, marks);
-	                    case 2:
-	                        int progress = (int) nextCell.getNumericCellValue();
-	                        statement.setInt(3, progress);
+	                        statement.setString(index, name);
 	                    }
-	 
+	                    else {
+	                        int progress = (int)nextCell.getNumericCellValue();
+	                        statement.setInt(index, progress);
+	                    }
+	                    index++;
 	                }
-	                 
 	                statement.addBatch();
-	                 
-	                if (count % batchSize == 0) {
-	                    statement.executeBatch();
-	                }              
-	 
-	            }
-	 
-	            workbook.close();
+	                    
+	                }
 	             
-	            // execute the remaining queries
+	            System.out.println(createstmt);
+	            System.out.println(insert);
+	            
+	            
+	            workbook.close();
+	            
 	            statement.executeBatch();
 	  
 	            connection.commit();
 	            connection.close();
 	             
-	            long end = System.currentTimeMillis();
-	            System.out.printf("Import done in %d ms\n", (end - start));
+	            
+	            System.out.printf("sucess");
 	             
-	        } catch (IOException ex1) {
-	            System.out.println("Error reading file");
-	            ex1.printStackTrace();
-	        } catch (SQLException ex2) {
-	            System.out.println("Database error");
-	            ex2.printStackTrace();
 	        }
+	        catch(Exception e)  
+			{  
+				e.printStackTrace();  
+			}  
 	 
 	    }
 }
